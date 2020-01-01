@@ -1,0 +1,164 @@
+package com.example.monkeydodge10;
+import android.view.Display;
+import android.view.Window;
+import android.view.WindowManager;
+import android.content.Context;
+import android.util.DisplayMetrics;
+
+import android.app.Activity;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Point;
+import android.graphics.Rect;
+import android.view.Display;
+import android.view.MotionEvent;
+import android.view.View;
+import android.os.Handler;
+import android.view.WindowManager;
+
+
+import java.util.Random;
+import java.util.logging.LogRecord;
+
+
+
+public class GameView extends View {
+
+
+    //This is our custom View class
+    Handler handler;//Handler is required to schedule a runnable after some delay
+    Runnable runnable;
+    final int UPDATE_MILLIS = 30;
+    Bitmap background;
+    Bitmap cage;
+    Bitmap botcage;
+    Bitmap cuscaSUS, cuscaJOS;
+    Bitmap lose;
+
+
+    Display display;
+    Point point;
+    int dWidith, dHeight;
+    Rect rect;
+    Bitmap monkeys;
+    int i;
+    Bitmap resized;
+
+    int velocity = 0, gravity = 3;
+    int monkeyX;
+    int monkeyY;
+
+    boolean gameState = false;
+    int gap = 100;
+    int minCAGEOFFset, maxCAGEOFFset;
+    int numberOFcages = 100;
+    int distamcecages;
+    int[] cagex = new int[numberOFcages];
+    int[] cagey = new int[numberOFcages];
+    Random random;
+    int cageVelocity = 20;
+
+
+    public GameView(Context context) {
+        super(context);
+        handler = new Handler();
+
+        runnable = new Runnable() {
+            @Override
+            public void run() {
+                invalidate();
+            }
+        };
+        background = BitmapFactory.decodeResource(getResources(), R.drawable.background);
+        cage = BitmapFactory.decodeResource(getResources(), R.drawable.topcage);
+        botcage = BitmapFactory.decodeResource(getResources(), R.drawable.botcage);
+        lose = BitmapFactory.decodeResource(getResources(), R.drawable.done);
+        display = ((Activity) getContext()).getWindowManager().getDefaultDisplay();
+        point = new Point();
+        display.getSize(point);
+        dWidith = point.x;
+        dHeight = point.y;
+        rect = new Rect(0, 0, dWidith, dHeight);
+
+        monkeys = BitmapFactory.decodeResource(getResources(), R.drawable.maimuta);
+
+        resized = Bitmap.createScaledBitmap(monkeys, (int) (monkeys.getWidth() * 0.5), (int) (monkeys.getHeight() * 0.5), true);
+        cuscaSUS = Bitmap.createScaledBitmap(cage, 220, 220, true);
+        cuscaJOS = Bitmap.createScaledBitmap(botcage, 220, 220, true);
+        monkeyX = dWidith / 5 - resized.getWidth() / 2;
+        monkeyY = dHeight / 2 - resized.getHeight() / 2;
+
+        distamcecages = dWidith * 3 / 4;
+        minCAGEOFFset = gap;
+        maxCAGEOFFset = dWidith - minCAGEOFFset - gap;
+        random = new Random();
+
+        for (int i = 0; i < numberOFcages; i++) {
+            cagex[i] = dWidith + i * distamcecages;
+            cagey[i] = minCAGEOFFset + random.nextInt(maxCAGEOFFset - minCAGEOFFset + 1);
+        }
+
+
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+        // We`ll drav our view inside onDraw()
+        // draw the background on canvas
+        //canvas.drawBitmap(background,0,0,null);
+        canvas.drawBitmap(background, null, rect, null);
+        if (gameState) {
+            if (monkeyY < dHeight - monkeys.getHeight() || velocity < 0) {
+                velocity += gravity;
+                monkeyY += velocity;
+
+            }
+
+            for (int i = 0; i < numberOFcages; i++) {
+                cagex[i] -= cageVelocity;
+
+
+                canvas.drawBitmap(cuscaSUS, cagex[i], cagey[i] - cuscaSUS.getHeight(), null);
+                canvas.drawBitmap(cuscaJOS, cagex[i] + 40, cagey[i] + cuscaSUS.getHeight() + 4 * gap * 3, null);
+                canvas.drawBitmap(cuscaSUS, cagex[i] * 2, cagey[i] + 4 * gap + 100, null);
+                if (((monkeyX == cagex[i] || monkeyX == cagex[i] + 40) || monkeyX == cagex[i] * 2) && ((monkeyY == cagey[i] - cuscaSUS.getHeight() || monkeyY == cagey[i] + cuscaSUS.getHeight() + 4 * gap * 3) || monkeyY == cagey[i] + 4 * gap + 100)) {
+                    canvas.drawBitmap(lose, null, rect, null);
+                }
+
+            }
+        }
+
+
+        canvas.drawBitmap(resized, monkeyX, monkeyY, null);
+
+        handler.postDelayed(runnable, UPDATE_MILLIS);
+    }
+
+   public static boolean isCollisionDetected(Bitmap v1, Bitmap v2) {
+
+        if (v1.getHeight() == v2.getHeight() && v1.getWidth() == v2.getWidth())
+            return true;
+        else
+            return false;
+            }
+
+
+
+        @Override
+        public boolean onTouchEvent(MotionEvent event)
+        {
+            int action = event.getAction();
+            if (action == MotionEvent.ACTION_DOWN)
+            {
+                velocity = -40;
+                gameState = true;
+            }
+            return true;
+
+        }
+
+    }
+
